@@ -1,35 +1,29 @@
-<html>
-<body>
-
-<h1>Scripts made for my X220 Thinkpad</h1>
+<H1>Scripts made for my X220 Thinkpad</H1>
 ----
 Most of the scripts are triggered by acpi events, will be migrated to respond to input events.
 After that, a sensible path must be found.
 
-<ul>thinkpad-battery.sh</ul>
+thinkpad-battery.sh
+-----
 This script shows the remaining running time on battery via osd_cat
 
-<ul>thinkpad-brightness.sh</ul>
+thinkpad-brightness.sh
 This script shows the current display brightness (slider bar) via osd_cat
 
-<ul>thinkpad-docking</ul>
+thinkpad-docking
 
-<ul>thinkpad-media.sh</ul>
+thinkpad-media.sh
 Handler for the media keys
 
-<ul>thinkpad-micmute.sh</ul>
+thinkpad-micmute.sh
 Toggles the microphone status
 
-<ul>thinkpad-mute.sh</ul>
+thinkpad-mute.sh
 Mutes the volume and lits up the mute led
 
-<ul>thinkpad-volume.sh</ul>
+thinkpad-volume.sh
 Shows the volume as a slider bar, needs further review
 
-<ul>thinkpad-zoom.sh</ul>
+thinkpad-zoom.sh
 Currently emits just XF86MyComputer keycode
 
-
-
-</body>
-</html>

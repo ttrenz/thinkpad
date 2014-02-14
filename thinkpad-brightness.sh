@@ -16,8 +16,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # http://www.gnu.org/copyleft/gpl.html
 
-export DISPLAY=":0.0"
-export XAUTHORITY='/home/user/.Xauthority'
+if [ -e /usr/share/acpi-support/power-funcs ]
+then
+. /usr/share/acpi-support/power-funcs
+else
+	echo "This scripts depends on acpi-support"
+fi
+
+getXconsole
+
 
 level=$(cat /sys/class/backlight/acpi_video0/brightness)    
 let perc=(100*$level)/15
