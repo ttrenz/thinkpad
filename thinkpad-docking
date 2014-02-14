@@ -1,0 +1,155 @@
+#!/bin/bash
+# Written by Thomas Trenz <ttrenz@web.de>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# http://www.gnu.org/copyleft/gpl.html
+
+exec >/dev/kmsg
+exec 2>/dev/kmsg
+
+set_display() { # {{{
+echo "Running function set_display"
+export DISPLAY=":0"
+export XAUTHORITY="/var/run/slim.auth"
+INTERNAL="LVDS1"
+declare -a monitors=();
+monitors=("${monitors[@]}" `xrandr -q | grep -w connected | cut -d ' ' -f1 | tr -s '\n' ' ' | sed 's/ $//' `)
+
+
+for connector in "${monitors[@]}"
+do
+test=${connector:0:-1}
+eval $test=$(for element in "${monitors[@]}";do echo $element;done | egrep -w ""$test".")
+done 
+
+set -x
+for connector in "${monitors[@]}"
+do
+if [ "$connector" != "$INTERNAL" ]
+then
+echo "Disabling $connector"
+xrandr --output $connector --off --noprimary
+shift
+fi
+done
+
+set +x
+
+
+
+if [ ! -z $DP ];then
+	echo "Primary display: $DP"
+	xrandr  --output $DP --auto --primary  
+	xrandr --output $INTERNAL --off --noprimary
+elif [ ! -z $HDMI ];then
+	echo "Primary display: $HDMI"
+	xrandr  --output $HDMI --auto --primary 
+	xrandr --output $INTERNAL --off --noprimary
+elif [ ! -z $VGA ];then
+	echo "Primary display: $VGA"
+	xrandr  --output $VGA --auto --primary 
+	xrandr  --output $INTERNAL --off --noprimary
+elif [ ! -z $LVDS ];then
+	echo "Primary display: $LVDS"
+	xrandr  --output $LVDS --auto --primary --verbose
+#	xrandr  --output $LVDS --mode 1024x768 --primary --verbose
+fi
+
+} # }}}
+
+network(){ #{{{
+case $1 in
+up)
+echo "Modprobing"
+/sbin/modprobe e1000e
+/sbin/ip addr add 192.168.0.46 dev eth0
+/sbin/ip addr add 10.0.0.2/24 dev eth0 label eth0:0
+/sbin/ip link set dev eth0 up
+/sbin/ip route add default via 192.168.0.1 dev eth0
+;;
+down)
+if [ -e /sys/modules/e1000e ]
+then
+/sbin/ip link set dev eth0 down
+modprobe -r e1000e
+else
+echo "Nothing to do for network"
+fi
+;;
+*)
+;;
+esac
+} #}}}
+
+dock(){ # {{{
+set_display || true
+fbsetbg -l
+xdotool windowmove $(xdotool search --name osd) 0 1010
+xdotool windowmove $(xdotool search --name stalonetray) 1792 1048
+
+#inetwork up
+} # }}}
+
+undock(){ #{{{
+export DISPLAY=":0"
+export XAUTHORITY="/var/run/slim.auth"
+INTERNAL="LVDS1"
+/usr/bin/sudo -n "/sbin/ifdown eth0"
+declare -a monitors=();
+monitors=("${monitors[@]}" `xrandr -q | grep -w connected | cut -d ' ' -f1 | tr -s '\n' ' ' | sed 's/ $//' `)
+for connector in "${monitors[@]}"
+do
+echo $connector
+if [ "$connector" != "$INTERNAL" ]
+then
+echo "Disabling $connector"
+xrandr --output $connector --off --noprimary
+shift
+else 
+xrandr --output $INTERNAL --auto --primary
+fi
+done
+xdotool windowmove $(xdotool search osd) 0 700
+fbsetbg -l
+sox -n -q -t alsa synth .08 exp 400 ; sox -n -q -t alsa synth .08 exp 400 delay 0.05
+
+} #}}}
+
+case $1 in #{{{1
+dock) #{{{2
+	echo "Running script thinkpad-docking docking"
+	dock
+	exit
+	;; #2}}}
+undock) #{{{2
+	echo "Running script thinkpad-docking undocking"
+	undock
+	exit
+	;; #2}}}
+*) #{{{2
+	echo "Determining parameters for thinkpad-docking, none passed"
+	if lsusb | grep -q "17ef:100a"
+	then
+	$0 dock
+	else
+	exit
+	# $0 undock
+	fi
+	exit
+	;; #2}}}
+esac #1}}}
+
+
+# vim: foldmethod=marker
